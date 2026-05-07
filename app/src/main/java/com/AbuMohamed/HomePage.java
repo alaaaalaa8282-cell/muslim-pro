@@ -230,32 +230,17 @@ public class HomePage extends AppCompatActivity {
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
 
-            switch (menuItem.getItemId()) {
-                case R.id.nav_tazbi:
-                    TazbiFragment tazbiFragment = new TazbiFragment();
-                    mChangeFragment(tazbiFragment);
-
-                    break;
-                case R.id.nav_quran:
-                    QuranFragment quranFragment = new QuranFragment();
-                    mChangeFragment(quranFragment);
-
-                    break;
-                case R.id.nav_prayer:
-                    PrayerFragment prayerFragment = new PrayerFragment();
-                    mChangeFragment(prayerFragment);
-
-                    break;
-                case R.id.nav_hajj_umrah:
-                    NearByMosqueFragment nearbyMosqueFragment = new NearByMosqueFragment();
-                    mChangeFragment(nearbyMosqueFragment);
-
-                    break;
-                case R.id.nav_makka_live:
-                    MakkaLiveFragment makkaLiveFragment = new MakkaLiveFragment();
-                    mChangeFragment(makkaLiveFragment);
-                    break;
-
+            int id = menuItem.getItemId();
+            if (id == R.id.nav_tazbi) {
+                mChangeFragment(new TazbiFragment());
+            } else if (id == R.id.nav_quran) {
+                mChangeFragment(new QuranFragment());
+            } else if (id == R.id.nav_prayer) {
+                mChangeFragment(new PrayerFragment());
+            } else if (id == R.id.nav_hajj_umrah) {
+                mChangeFragment(new NearByMosqueFragment());
+            } else if (id == R.id.nav_makka_live) {
+                mChangeFragment(new MakkaLiveFragment());
             }
             return true;
         }
@@ -278,3 +263,4 @@ public class HomePage extends AppCompatActivity {
 
 
 }
+
