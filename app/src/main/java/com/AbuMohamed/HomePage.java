@@ -1,5 +1,7 @@
 package com.AbuMohamed;
 
+import com.AbuMohamed.IslamicProHelper;
+
 import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -263,4 +265,3 @@ public class HomePage extends AppCompatActivity {
 
 
 }
-
