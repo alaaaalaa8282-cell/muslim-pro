@@ -1,15 +1,17 @@
 package com.AbuMohamed.homePageFragments;
 
-
 import android.app.ProgressDialog;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import androidx.fragment.app.Fragment;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.Player;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -22,9 +24,6 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
-
-
-import androidx.media3.common.Player;
 import com.AbuMohamed.App.Apis;
 import com.AbuMohamed.R;
 import com.AbuMohamed.adapters.MakkaLiveAdapter;
@@ -43,7 +42,8 @@ public class MakkaLiveFragment extends Fragment {
     private View mView;
     private MakkaLiveAdapter makkaLiveAdapter;
     private List<MakkaLive> makkaLives;
-    private VideoView videoView;
+    private ExoPlayer exoPlayer;
+    private PlayerView playerView;
     private RecyclerView rvLiveTvlist;
     private RequestQueue mRequestQueue;
     private ProgressDialog mProgressDialog;
@@ -51,166 +51,101 @@ public class MakkaLiveFragment extends Fragment {
     private boolean isClicked = false;
     private String tvName, liveTvUrl;
 
-    public MakkaLiveFragment() {
-
-    }
-
+    public MakkaLiveFragment() {}
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         mView = inflater.inflate(R.layout.fragment_makka_live, container, false);
 
-        // Toolbar visible
-        Common.toolbarVisibility("visible","Makka Live",1);
+        Common.toolbarVisibility("visible", "Makka Live", 1);
 
         rvLiveTvlist = mView.findViewById(R.id.rvLiveTvlist);
         landscapBtn = mView.findViewById(R.id.landscapBtn);
+        playerView = mView.findViewById(R.id.video_view);
         makkaLives = new ArrayList<>();
 
         mRequestQueue = Volley.newRequestQueue(getActivity());
         mProgressDialog = new ProgressDialog(getContext());
         mProgressDialog.setMessage("Please Wait...!");
 
-        landscapBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-//                Intent intent = new Intent(getContext(), LiveVideoPlayActivity.class);
-//                intent.putExtra("videoUrl", Common.plyTvUrl);
-//                startActivity(intent);
-
-            }
-        });
+        landscapBtn.setOnClickListener(view -> {});
 
         liveTvM();
         return mView;
     }
 
-    //-------------Live Tv method--------------
     private void liveTvM() {
         mProgressDialog.show();
         final JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, Apis.tvUrl, null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            String name = "";
-                            String url = "";
-                            String alt_url = "";
-                            String image = "";
-                            String alt_image = "";
-                            String apk = "";
-                            String yitid = "";
-                            String id = "";
-                            JSONArray jsonArray = response.getJSONArray("items");
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                JSONObject hit = jsonArray.getJSONObject(i);
-                                name = hit.getString("name");
-                                url = hit.getString("url");
-                                alt_url = hit.getString("alt_url");
-                                image = hit.getString("image");
-                                alt_image = hit.getString("alt_image");
-                                apk = hit.getString("apk");
-                                yitid = hit.getString("yitid");
-                                id = hit.getString("id");
+                response -> {
+                    try {
+                        JSONArray jsonArray = response.getJSONArray("items");
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            JSONObject hit = jsonArray.getJSONObject(i);
+                            String name = hit.getString("name");
+                            String url = hit.getString("url");
+                            String alt_url = hit.getString("alt_url");
+                            String image = hit.getString("image");
+                            String alt_image = hit.getString("alt_image");
+                            String apk = hit.getString("apk");
+                            String yitid = hit.getString("yitid");
+                            String id = hit.getString("id");
 
-                                if (i == 0) {
-                                    if (isClicked == false) {
-                                        startTv(name, url);
-                                    }
-                                }
-                                mProgressDialog.dismiss();
-                                makkaLives.add(new MakkaLive(name, url, alt_url, image, alt_image, apk, yitid, id));
+                            if (i == 0 && !isClicked) {
+                                startTv(name, url);
                             }
-                            makkaLiveAdapter = new MakkaLiveAdapter(makkaLives, getActivity(), new MakkaLiveAdapter.RecyclerViewClickLister() {
-                                @Override
-                                public void onClick(View view, int position) {
-                                    liveTvUrl = makkaLives.get(position).getUrl();
-                                    isClicked = true;
-                                    tvName = makkaLives.get(position).getName();
-                                    liveTvUrl = makkaLives.get(position).getUrl();
-                                    startTv(tvName, liveTvUrl);
-                                    mProgressDialog.dismiss();
-                                }
-                            });
-                            rvLiveTvlist.setLayoutManager(new LinearLayoutManager(getActivity()));
-                            rvLiveTvlist.setAdapter(makkaLiveAdapter);
-                            makkaLiveAdapter.notifyDataSetChanged();
                             mProgressDialog.dismiss();
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                            mProgressDialog.dismiss();
+                            makkaLives.add(new MakkaLive(name, url, alt_url, image, alt_image, apk, yitid, id));
                         }
+                        makkaLiveAdapter = new MakkaLiveAdapter(makkaLives, getActivity(), (view, position) -> {
+                            liveTvUrl = makkaLives.get(position).getUrl();
+                            isClicked = true;
+                            tvName = makkaLives.get(position).getName();
+                            startTv(tvName, liveTvUrl);
+                            mProgressDialog.dismiss();
+                        });
+                        rvLiveTvlist.setLayoutManager(new LinearLayoutManager(getActivity()));
+                        rvLiveTvlist.setAdapter(makkaLiveAdapter);
+                        makkaLiveAdapter.notifyDataSetChanged();
+                        mProgressDialog.dismiss();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        mProgressDialog.dismiss();
                     }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                mProgressDialog.dismiss();
-            }
-        });
+                }, error -> mProgressDialog.dismiss());
         mRequestQueue.add(request);
     }
-    //---------------End-------------
 
-    //-------------Video player Method----------
     private void startTv(final String tvName, final String liveTvUrl) {
-        videoView = (VideoView) mView.findViewById(R.id.video_view);
-        videoView.setOnPreparedListener(new OnPreparedListener() {
-            @Override
-            public void onPrepared() {
-                videoView.start();
-                Common.plyTvName = tvName;
-                Common.plyTvUrl = liveTvUrl;
-            }
-        });
-        videoView.setRepeatMode(Player.REPEAT_MODE_ONE);
-        videoView.setVideoURI(Uri.parse(liveTvUrl));
-        videoView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-
-                switch (motionEvent.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        landscapBtn.setVisibility(View.VISIBLE);
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        final Handler handler = new Handler();
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                landscapBtn.setVisibility(View.GONE);
-                            }
-                        }, 2000);
-                        videoView.showControls();
-                        return true;
-
-                    case MotionEvent.ACTION_MOVE:
-                        return true;
-                }
-
-                return false;
-            }
-        });
-        videoView.setOnErrorListener(new OnErrorListener() {
-            @Override
-            public boolean onError(Exception e) {
-                Toast.makeText(getContext(), "Something Is Wrong!", Toast.LENGTH_SHORT).show();
-                return false;
-            }
-        });
+        if (exoPlayer != null) exoPlayer.release();
+        exoPlayer = new ExoPlayer.Builder(requireContext()).build();
+        playerView.setPlayer(exoPlayer);
+        MediaItem mediaItem = MediaItem.fromUri(Uri.parse(liveTvUrl));
+        exoPlayer.setMediaItem(mediaItem);
+        exoPlayer.setRepeatMode(Player.REPEAT_MODE_ONE);
+        exoPlayer.prepare();
+        exoPlayer.play();
+        Common.plyTvName = tvName;
+        Common.plyTvUrl = liveTvUrl;
     }
-    //---------------End-------------
 
     @Override
     public void onStop() {
         super.onStop();
-        videoView.pause();
+        if (exoPlayer != null) exoPlayer.pause();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (exoPlayer != null) {
+            exoPlayer.release();
+            exoPlayer = null;
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
     }
-
 }
