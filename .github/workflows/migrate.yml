@@ -1,0 +1,33 @@
+name: Migrate to AndroidX
+
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Replace all support imports
+        run: |
+          find app/src -name "*.java" -o -name "*.xml" | xargs sed -i \
+            -e 's/android\.support\.v4\.app\./androidx.fragment.app./g' \
+            -e 's/android\.support\.v7\.app\./androidx.appcompat.app./g' \
+            -e 's/android\.support\.v7\.widget\./androidx.recyclerview.widget./g' \
+            -e 's/android\.support\.v4\.content\./androidx.core.content./g' \
+            -e 's/android\.support\.v4\.view\./androidx.core.view./g' \
+            -e 's/android\.support\.v4\.widget\./androidx.core.widget./g' \
+            -e 's/android\.support\.design\.widget\./com.google.android.material./g' \
+            -e 's/android\.support\.v7\.widget\.CardView/androidx.cardview.widget.CardView/g' \
+            -e 's/android\.support\.constraint\./androidx.constraintlayout.widget./g' \
+            -e 's/android\.support\.v7\.widget\.RecyclerView/androidx.recyclerview.widget.RecyclerView/g' \
+            -e 's/android\.support\.v4\.app\.ActivityCompat/androidx.core.app.ActivityCompat/g'
+
+      - name: Commit changes
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add -A
+          git commit -m "Full AndroidX migration" || echo "Nothing to commit"
+          git push
