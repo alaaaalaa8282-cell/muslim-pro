@@ -1,4 +1,5 @@
 package com.AbuMohamed.fragments;
+import com.AbuMohamed.App.IslamicProHelper;
 
 
 import android.Manifest;
