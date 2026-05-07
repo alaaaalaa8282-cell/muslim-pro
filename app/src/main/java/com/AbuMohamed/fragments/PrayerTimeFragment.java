@@ -1,4 +1,5 @@
 package com.AbuMohamed.fragments;
+import com.AbuMohamed.App.IslamicProHelper;
 
 
 import android.content.Context;
@@ -26,7 +27,6 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.AbuMohamed.App.Apis;
-import com.AbuMohamed.IslamicProHelper;
 import com.AbuMohamed.R;
 
 import org.json.JSONArray;
