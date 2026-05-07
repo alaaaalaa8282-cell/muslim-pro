@@ -101,7 +101,7 @@ public class Alarm extends BroadcastReceiver {
     private void notification(Context context, String notiTitle) {
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
-        Builder mBuilder = new Builder(context, "notify_001");
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, "notify_001");
         Intent inggg = new Intent(context.getApplicationContext(), SplashScreenActivity.class);
         inggg.putExtra("newLink", notiTitle);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, inggg, PendingIntent.FLAG_ONE_SHOT);
