@@ -1,6 +1,6 @@
 package com.AbuMohamed;
+import com.AbuMohamed.App.IslamicProHelper;
 
-import com.AbuMohamed.IslamicProHelper;
 
 import android.content.Context;
 import android.content.Intent;
