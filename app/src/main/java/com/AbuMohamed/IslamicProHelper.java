@@ -1,5 +1,7 @@
 package com.AbuMohamed;
 
+import com.AbuMohamed.BuildConfig;
+
 public class IslamicProHelper {
     public static final String PREFS_NAME = BuildConfig.APPLICATION_ID;
     public static final String USER_CITY = "MyCurrentCity";
