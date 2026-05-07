@@ -9,7 +9,6 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.PlacesClient;
@@ -21,15 +20,12 @@ import java.util.Arrays;
 import java.util.List;
 
 public class PlaceSearchActivity extends AppCompatActivity {
-    AutocompleteFilter typeFilter;
-
 
     AutocompleteSupportFragment autocompleteSupportFragment;
     PlacesClient placesClient;
     List<Place.Field> placeFeilds = Arrays.asList(Place.Field.ID,
             Place.Field.NAME,
             Place.Field.ADDRESS);
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,15 +36,8 @@ public class PlaceSearchActivity extends AppCompatActivity {
 
         Places.initialize(this, getString(R.string.placeApiKey));
 
-// Create a new Places client instance.
         placesClient = Places.createClient(this);
 
-
-        typeFilter = new AutocompleteFilter.Builder()
-                .setTypeFilter(AutocompleteFilter.TYPE_FILTER_ADDRESS)
-                .setTypeFilter(3)
-                .build();
-        // Initialize the AutocompleteSupportFragment.
         AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
                 getSupportFragmentManager().findFragmentById(R.id.place_location_pickup);
 
@@ -58,7 +47,6 @@ public class PlaceSearchActivity extends AppCompatActivity {
             public void onPlaceSelected(@NonNull Place place) {
                 Log.i("PLACENAME", "Place: " + place.getName() + ", " + place.getLatLng());
                 Common.placeName = place.getName();
-
                 startActivity(new Intent(PlaceSearchActivity.this, LocationPermissionActivity.class));
                 finish();
             }
@@ -68,6 +56,5 @@ public class PlaceSearchActivity extends AppCompatActivity {
                 Log.i("PLACE_ERROR", "An error occurred: " + status);
             }
         });
-
     }
 }
