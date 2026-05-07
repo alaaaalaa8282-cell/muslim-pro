@@ -1,4 +1,5 @@
 package com.AbuMohamed.fragments;
+import com.AbuMohamed.App.IslamicProHelper;
 
 
 import android.Manifest;
@@ -50,7 +51,6 @@ import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.AbuMohamed.HomePage;
-import com.AbuMohamed.IslamicProHelper;
 import com.AbuMohamed.R;
 import com.AbuMohamed.introSlider.SecondSlider;
 
@@ -443,4 +443,4 @@ public class CompassFragment extends Fragment implements SensorEventListener,
 
         }
 
-}
+        }
