@@ -1,4 +1,5 @@
 package com.AbuMohamed.introSlider;
+import com.AbuMohamed.App.IslamicProHelper;
 
 import android.Manifest;
 import android.content.Context;
@@ -38,7 +39,6 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
-import com.AbuMohamed.IslamicProHelper;
 import com.AbuMohamed.LocationPermissionActivity;
 import com.AbuMohamed.PlaceSearchActivity;
 import com.AbuMohamed.R;
