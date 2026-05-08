@@ -161,7 +161,7 @@ public class SplashScreenActivity extends AppCompatActivity {
     }
 
     private void prayerTimeParsing(final String mDate, final String locat) {
-        StringRequest request = new StringRequest(Request.Method.GET, Apis.prayerTime + mDate + "&city=" + locat,
+        StringRequest request = new StringRequest(Request.Method.GET, Apis.prayerTime + mDate + "&latitude=" + latitude + "&longitude=" + longitude,
                 response -> {
                     try {
                         String j_date = null, hijri_date = null, fajr = null, dhuhr = null, asr = null, maghrib = null, isha = null;
