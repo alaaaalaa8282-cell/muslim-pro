@@ -212,7 +212,7 @@ public class SplashScreenActivity extends AppCompatActivity {
     }
 
     private void prayerTimeParsing(final String mDate, final String locat) {
-        StringRequest request = new StringRequest(Request.Method.GET, Apis.prayerTime + mDate + "&city=" + locat + "&country=EG",
+        StringRequest request = new StringRequest(Request.Method.GET, Apis.prayerTime + mDate + "&latitude=" + latitude + "&longitude=" + longitude, new Response.Listener<String>() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onResponse(String response) {
