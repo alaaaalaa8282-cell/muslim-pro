@@ -209,7 +209,7 @@ public class SplashScreenActivity extends AppCompatActivity {
     }
 
     private void ramajanJson(final String lat, final String longi) {
-        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, Apis.ramadan + lat + "&long=" + longi, null, response -> {
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, Apis.ramadan + lat + "&longitude=" + longi, null, response -> {
             SimpleDateFormat _12HourSDF = new SimpleDateFormat("hh:mm a");
             SimpleDateFormat _24HourSDF = new SimpleDateFormat("HH:mm");
             for (int i = 0; i < response.length(); i++) {
