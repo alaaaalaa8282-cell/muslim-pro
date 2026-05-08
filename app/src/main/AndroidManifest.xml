@@ -51,14 +51,14 @@
             android:value="AIzaSyBbYnWfoDdGCtyiR0UWBDoXZeat7y7X1Mc" />
 
         <activity
-            android:name=".LocationPermissionActivity"
-            android:exported="false">
+    android:name=".LocationPermissionActivity"
+    android:exported="false"/>
 
-        <activity
-            android:name=".FullSuraActivity"
-            android:exported="false"/>
+<activity
+    android:name=".FullSuraActivity"
+    android:exported="false"/>
 
-        <activity
+<activity
     android:name=".SplashScreenActivity"
     android:exported="true">
     <intent-filter>
