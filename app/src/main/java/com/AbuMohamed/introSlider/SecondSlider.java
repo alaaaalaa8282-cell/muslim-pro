@@ -1,4 +1,5 @@
 package com.AbuMohamed.introSlider;
+import com.AbuMohamed.App.IslamicProHelper;
 
 import android.Manifest;
 import android.content.Context;
@@ -9,9 +10,15 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+import androidx.core.content.ContextCompat;
+import androidx.appcompat.app.AlertDialog;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -22,21 +29,13 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
-
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.Priority;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.tasks.OnSuccessListener;
 
-import com.AbuMohamed.App.IslamicProHelper;
 import com.AbuMohamed.LocationPermissionActivity;
 import com.AbuMohamed.PlaceSearchActivity;
 import com.AbuMohamed.R;
@@ -44,7 +43,9 @@ import com.AbuMohamed.common.Common;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
+
+import static android.app.Activity.RESULT_CANCELED;
+import static android.app.Activity.RESULT_OK;
 
 public class SecondSlider extends Fragment {
 
@@ -52,170 +53,201 @@ public class SecondSlider extends Fragment {
     Button buttonLocationPermission, btnChange;
     private ProgressBar progress_circular;
 
-    public static final int REQUEST_LOCATION = 199;
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+    public final static int REQUEST_LOCATION = 199;
+    private Geocoder geocoder;
+    public String locationName = "null";
+    private double latitude, longitude;
+    Handler handler = new Handler();
+    Runnable runnable;
+    private int isClick = 0;
+
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
-    private SharedPreferences settings;
-    private SharedPreferences.Editor editor;
 
-    public SecondSlider() {}
+    SharedPreferences settings;
+    SharedPreferences.Editor editor;
+
+    public SecondSlider() {
+        // Required empty public constructor
+    }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_second_slider, container, false);
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
 
         settings = getActivity().getSharedPreferences(IslamicProHelper.PREFS_NAME, Context.MODE_PRIVATE);
         editor = settings.edit();
-
         buttonLocationPermission = view.findViewById(R.id.buttonLocationPermission);
         user_city_name = view.findViewById(R.id.user_city_name);
         btnChange = view.findViewById(R.id.btn_changePage);
         progress_circular = view.findViewById(R.id.progress_circular);
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
-
         if (!TextUtils.isEmpty(Common.placeName)) {
             user_city_name.setText(Common.placeName);
             btnChange.setVisibility(View.VISIBLE);
-            btnChange.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary));
-            new Thread(() -> {
-                String lat = getLatitudeFromAddress(requireContext(), Common.placeName);
-                String lng = getLogitudeFromAddress(requireContext(), Common.placeName);
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    editor.putString(IslamicProHelper.USER_LAT, lat);
-                    editor.putString(IslamicProHelper.USER_LNG, lng);
-                    editor.apply();
-                });
-            }).start();
+            btnChange.setTextColor(getResources().getColor(R.color.colorPrimary));
+            editor.putString(IslamicProHelper.USER_LAT, getLatitudeFromAddress(getContext(), Common.placeName));
+            editor.putString(IslamicProHelper.USER_LNG, getLogitudeFromAddress(getContext(), Common.placeName));
+            editor.commit();
         }
 
-        user_city_name.setOnClickListener(v -> {
-            startActivity(new Intent(getContext(), PlaceSearchActivity.class));
-            getActivity().finish();
-        });
-
-        btnChange.setOnClickListener(v -> {
-            if (user_city_name.getText().length() != 0) {
-                buttonLocationPermission.setEnabled(false);
-                editor.putString(IslamicProHelper.USER_CITY, user_city_name.getText().toString());
-                editor.apply();
-                LocationPermissionActivity.viewPager.setCurrentItem(2);
-            } else if (Common.city.equals("GPS") || !settings.getString(IslamicProHelper.USER_CITY, "").equals("")) {
-                LocationPermissionActivity.viewPager.setCurrentItem(2);
-            } else {
-                Toast.makeText(getContext(), "You must need to turn on your location or input your city", Toast.LENGTH_SHORT).show();
+        user_city_name.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getContext(), PlaceSearchActivity.class));
+                getActivity().finish();
             }
         });
 
-        buttonLocationPermission.setOnClickListener(v -> {
-            buttonLocationPermission.setVisibility(View.INVISIBLE);
-            progress_circular.setVisibility(View.VISIBLE);
-            checkAndRequestLocation();
+        btnChange.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (user_city_name.getText().length() != 0) {
+                    buttonLocationPermission.setEnabled(false);
+                    editor.putString(IslamicProHelper.USER_CITY, user_city_name.getText().toString());
+                    editor.commit();
+                    LocationPermissionActivity.viewPager.setCurrentItem(2);
+                } else if (Common.city.equals("GPS") || !settings.getString(IslamicProHelper.USER_CITY, "").equals("")) {
+                    LocationPermissionActivity.viewPager.setCurrentItem(2);
+                } else {
+                    Toast.makeText(getContext(), "You must need to turn on your location or input your city", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        buttonLocationPermission.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                checkLocationPermission();
+                buttonLocationPermission.setVisibility(View.INVISIBLE);
+                progress_circular.setVisibility(View.VISIBLE);
+                isClick = 1;
+                getCurrentLocation();
+            }
         });
 
         return view;
     }
 
-    private void checkAndRequestLocation() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)) {
-                new AlertDialog.Builder(requireContext())
-                        .setTitle(R.string.title_location_permission)
-                        .setMessage(R.string.text_location_permission)
-                        .setPositiveButton(R.string.ok, (dialog, i) ->
-                                ActivityCompat.requestPermissions(requireActivity(),
-                                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION))
-                        .show();
-            } else {
-                ActivityCompat.requestPermissions(requireActivity(),
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
-            }
-        } else {
-            startLocationUpdates();
+    private void getCurrentLocation() {
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            checkLocationPermission();
+            return;
         }
-    }
 
-    private void startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) return;
-
-        LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
-                .setMinUpdateIntervalMillis(2500)
-                .setMaxUpdates(1)
-                .build();
-
-        locationCallback = new LocationCallback() {
+        fusedLocationClient.getLastLocation().addOnSuccessListener(getActivity(), new OnSuccessListener<Location>() {
             @Override
-            public void onLocationResult(@NonNull LocationResult locationResult) {
-                Location location = locationResult.getLastLocation();
+            public void onSuccess(Location location) {
                 if (location != null) {
-                    new Thread(() -> {
-                        try {
-                            Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
-                            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                            if (addresses != null && !addresses.isEmpty()) {
-                                String cityName = addresses.get(0).getLocality();
-                                new Handler(Looper.getMainLooper()).post(() -> {
-                                    editor.putString(IslamicProHelper.USER_CITY, cityName);
-                                    editor.putString(IslamicProHelper.USER_LAT, String.valueOf(location.getLatitude()));
-                                    editor.putString(IslamicProHelper.USER_LNG, String.valueOf(location.getLongitude()));
-                                    editor.apply();
-                                    progress_circular.setVisibility(View.GONE);
-                                    user_city_name.setText(cityName);
-                                    user_city_name.setVisibility(View.VISIBLE);
-                                    btnChange.setVisibility(View.VISIBLE);
-                                    btnChange.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary));
-                                });
-                            }
-                        } catch (IOException e) {
-                            Log.e("GEOCODER", e.getMessage());
+                    latitude = location.getLatitude();
+                    longitude = location.getLongitude();
+                    try {
+                        geocoder = new Geocoder(getContext());
+                        List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+                        if (addresses != null && addresses.size() > 0) {
+                            locationName = addresses.get(0).getLocality();
+                            editor.putString(IslamicProHelper.USER_CITY, locationName);
+                            editor.putString(IslamicProHelper.USER_LAT, String.valueOf(latitude));
+                            editor.putString(IslamicProHelper.USER_LNG, String.valueOf(longitude));
+                            editor.commit();
+
+                            progress_circular.setVisibility(View.GONE);
+                            user_city_name.setText(locationName);
+                            user_city_name.setVisibility(View.VISIBLE);
+                            user_city_name.setEnabled(false);
+                            btnChange.setVisibility(View.VISIBLE);
+                            btnChange.setTextColor(getResources().getColor(R.color.colorPrimary));
                         }
-                    }).start();
-                    fusedLocationClient.removeLocationUpdates(locationCallback);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Log.d("ERROR_HERE", e.getMessage());
+                    }
+                } else {
+                    Toast.makeText(getContext(), "Please turn on your GPS", Toast.LENGTH_SHORT).show();
+                    progress_circular.setVisibility(View.GONE);
+                    buttonLocationPermission.setVisibility(View.VISIBLE);
                 }
             }
-        };
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
+        });
     }
 
     public String getLogitudeFromAddress(Context context, String strAddress) {
+        Geocoder coder = new Geocoder(context);
+        List<Address> address;
+        String lng = null;
         try {
-            Geocoder coder = new Geocoder(context);
-            List<Address> address = coder.getFromLocationName(strAddress, 1);
-            if (address != null && !address.isEmpty())
-                return String.valueOf(address.get(0).getLongitude());
-        } catch (IOException ex) { Log.e("GEOCODER", ex.getMessage()); }
-        return null;
+            address = coder.getFromLocationName(strAddress, 5);
+            if (address == null) return null;
+            Address location = address.get(0);
+            lng = String.valueOf(location.getLongitude());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return lng;
     }
 
     public String getLatitudeFromAddress(Context context, String strAddress) {
+        Geocoder coder = new Geocoder(context);
+        List<Address> address;
+        String lat = null;
         try {
-            Geocoder coder = new Geocoder(context);
-            List<Address> address = coder.getFromLocationName(strAddress, 1);
-            if (address != null && !address.isEmpty())
-                return String.valueOf(address.get(0).getLatitude());
-        } catch (IOException ex) { Log.e("GEOCODER", ex.getMessage()); }
-        return null;
+            address = coder.getFromLocationName(strAddress, 5);
+            if (address == null) return null;
+            Address location = address.get(0);
+            lat = String.valueOf(location.getLatitude());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return lat;
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == REQUEST_LOCATION) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startLocationUpdates();
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION)) {
+                new AlertDialog.Builder(getContext())
+                        .setTitle(R.string.title_location_permission)
+                        .setMessage(R.string.text_location_permission)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                ActivityCompat.requestPermissions(getActivity(),
+                                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                        REQUEST_LOCATION);
+                            }
+                        })
+                        .create()
+                        .show();
             } else {
-                progress_circular.setVisibility(View.GONE);
-                buttonLocationPermission.setVisibility(View.VISIBLE);
-                Toast.makeText(getContext(), "Location permission denied", Toast.LENGTH_SHORT).show();
+                ActivityCompat.requestPermissions(getActivity(),
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        REQUEST_LOCATION);
             }
+            return false;
+        } else {
+            return true;
         }
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (fusedLocationClient != null && locationCallback != null)
-            fusedLocationClient.removeLocationUpdates(locationCallback);
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (resultCode == RESULT_OK) {
+            checkLocationPermission();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        if (requestCode == MY_PERMISSIONS_REQUEST_LOCATION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                getCurrentLocation();
+            } else {
+                checkLocationPermission();
+            }
+        }
     }
 }
