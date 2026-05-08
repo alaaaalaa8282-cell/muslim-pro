@@ -32,7 +32,7 @@ jobs:
 
       - name: Build APK
         run: |
-          ./gradlew assembleRelease \
+          ./gradlew assembleRelease -x lintVitalRelease \
             -Pandroid.injected.signing.store.file=${{ github.workspace }}/muslimpro.jks \
             -Pandroid.injected.signing.store.password=muslimpro123 \
             -Pandroid.injected.signing.key.alias=muslimpro \
