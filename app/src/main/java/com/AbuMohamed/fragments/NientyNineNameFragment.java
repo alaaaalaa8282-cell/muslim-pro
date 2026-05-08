@@ -21,6 +21,7 @@ import com.AbuMohamed.R;
 import com.AbuMohamed.adapters.NinetyNine_NamesAdapter;
 import com.AbuMohamed.common.Common;
 import com.AbuMohamed.models.NinetyNine_Names;
+import com.AbuMohamed.fragments.NientyNingMeaningFragment;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -80,7 +81,7 @@ public class NientyNineNameFragment extends Fragment {
                             Common.number = item.getNumber();
                             Common.aribName = item.getArabicName();
                             Common.nameMeaning = item.getEnMeaning();
-                            Fragment mFragment = new NientyMeaningFragment();
+                            Fragment mFragment = new NientyNingMeaningFragment();
                             mChangeFragment_2(mFragment);
                         }
                     });
