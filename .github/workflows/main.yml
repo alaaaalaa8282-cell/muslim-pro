@@ -8,35 +8,39 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - run: chmod +x gradlew
 
-      - name: Grant execute permission
-        run: chmod +x gradlew
+      - name: Generate Keystore
+        run: |
+          keytool -genkeypair \
+            -alias muslimpro \
+            -keyalg RSA -keysize 2048 \
+            -validity 9125 \
+            -keystore muslimpro.jks \
+            -storepass muslimpro123 \
+            -keypass muslimpro123 \
+            -dname "CN=MuslimPro,O=Islamic,C=EG" \
+            -noprompt
 
-      - name: Build Debug APK
-        run: ./gradlew clean assembleDebug --stacktrace
+      - name: Build APK
+        run: |
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=${{ github.workspace }}/muslimpro.jks \
+            -Pandroid.injected.signing.store.password=muslimpro123 \
+            -Pandroid.injected.signing.key.alias=muslimpro \
+            -Pandroid.injected.signing.key.password=muslimpro123
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AbuAlaa-Islami-debug
-          path: app/build/outputs/apk/debug/*.apk
+          name: AbuAlaa-Islami-release
+          path: app/build/outputs/apk/release/*.apk
           retention-days: 7
