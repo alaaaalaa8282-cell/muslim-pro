@@ -1,4 +1,4 @@
-package com.AbuMohamed.App;
+package com.AbuMohamed;
 
 public class IslamicProHelper {
     public static final String PREFS_NAME = "com.AbuMohamed";
