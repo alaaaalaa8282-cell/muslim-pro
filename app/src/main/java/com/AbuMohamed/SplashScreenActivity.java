@@ -43,19 +43,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-
 public class SplashScreenActivity extends AppCompatActivity {
     private RequestQueue mRequestQueue;
     private List<String> prayerTimeList = new ArrayList<>();
     private SharedPreferences sharedPreferences;
-    private String mDate,mDate2,share_date;
+    private String mDate, mDate2, share_date;
     SharedPreferences settings;
     SharedPreferences.Editor editor;
     private Gson gson = new Gson();
     private AlertDialog appControlDialog;
-    private ImageView ivWifi,ivMobileData,ivCancel;
+    private ImageView ivWifi, ivMobileData, ivCancel;
     private String city;
-    private String latitude,longitude;
+    private String latitude, longitude;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,13 +78,16 @@ public class SplashScreenActivity extends AppCompatActivity {
         mRequestQueue = Volley.newRequestQueue(this);
         mDate = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Calendar.getInstance().getTime());
         mDate2 = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().getTime());
-
         latitude = settings.getString(IslamicProHelper.USER_LAT, "");
         longitude = settings.getString(IslamicProHelper.USER_LNG, "");
 
-        if (latitude.isEmpty() && longitude.isEmpty()) {
-            Common.ramadanList.add(new Ramadan("0","0","0","0","0","0"));
+        if (latitude.isEmpty() || longitude.isEmpty()) {
+            // لو مفيش coordinates روح HomePage مباشرة
+            goToHome();
+            return;
         }
+
+        Common.ramadanList.add(new Ramadan("0", "0", "0", "0", "0", "0"));
 
         if (NoInternet.isConnected(SplashScreenActivity.this)) {
             isEmptycheck();
@@ -97,15 +99,13 @@ public class SplashScreenActivity extends AppCompatActivity {
     private void isEmptycheck() {
         String json = sharedPreferences.getString("Set", "");
         if (json.isEmpty()) {
-            prayerTimeParsing(mDate, city);
+            prayerTimeParsing(mDate);
         } else {
             Type type = new TypeToken<List<String>>() {}.getType();
             List<String> arrayData = gson.fromJson(json, type);
-            for (int i = 0; i < arrayData.size(); i++) {
-                share_date = arrayData.get(5);
-            }
+            if (arrayData.size() > 5) share_date = arrayData.get(5);
             if (!mDate2.equals(share_date)) {
-                prayerTimeParsing(mDate, city);
+                prayerTimeParsing(mDate);
             } else {
                 goToHome();
             }
@@ -120,91 +120,58 @@ public class SplashScreenActivity extends AppCompatActivity {
     @RequiresApi(api = Build.VERSION_CODES.O)
     public static String convert_date(String raw_date) {
         Date final_date = null, final_date2 = null;
-        String isMOnthName = null;
-        String isdayth = null;
-        try {
-            final_date = new SimpleDateFormat("yyyy-MM-dd").parse(raw_date);
-        } catch (ParseException e) { e.printStackTrace(); }
+        String isMOnthName = null, isdayth = null;
+        try { final_date = new SimpleDateFormat("yyyy-MM-dd").parse(raw_date); } catch (ParseException e) { e.printStackTrace(); }
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(final_date);
-        int eYear = calendar.get(Calendar.YEAR);
-        int eMonth = calendar.get(Calendar.MONTH);
-        int eday = calendar.get(Calendar.DAY_OF_MONTH);
-        String new_date = String.valueOf(eYear+"-"+eMonth+"-"+eday);
-        try {
-            final_date2 = new SimpleDateFormat("yyyy-MM-dd").parse(new_date);
-        } catch (ParseException e) { e.printStackTrace(); }
+        String new_date = calendar.get(Calendar.YEAR) + "-" + calendar.get(Calendar.MONTH) + "-" + calendar.get(Calendar.DAY_OF_MONTH);
+        try { final_date2 = new SimpleDateFormat("yyyy-MM-dd").parse(new_date); } catch (ParseException e) { e.printStackTrace(); }
         IslamicCalendar calendar1 = new IslamicCalendar();
         calendar1.setTimeZone(TimeZone.getDefault());
         calendar1.setTime(final_date2);
         int isYear = calendar1.get(IslamicCalendar.YEAR);
-        int isMontth = calendar1.get(IslamicCalendar.MONTH)+1;
+        int isMontth = calendar1.get(IslamicCalendar.MONTH) + 1;
         int isDay = calendar1.get(IslamicCalendar.DAY_OF_MONTH);
-        if (isMontth == 0) isMOnthName = "Muharram";
-        else if (isMontth == 1) isMOnthName = "Safar";
-        else if (isMontth == 2) isMOnthName = "Rabi-ul-Awwal";
-        else if (isMontth == 3) isMOnthName = "Rabi-ul-Aakhir";
-        else if (isMontth == 4) isMOnthName = "Jamadi-ul-Awwal";
-        else if (isMontth == 5) isMOnthName = "Jamadi-ul-Aakhir";
-        else if (isMontth == 6) isMOnthName = "Rajab";
-        else if (isMontth == 7) isMOnthName = "Shaban";
-        else if (isMontth == 8) isMOnthName = "Ramadan";
-        else if (isMontth == 9) isMOnthName = "Shawwal";
-        else if (isMontth == 10) isMOnthName = "Zulqaida";
-        else if (isMontth == 11) isMOnthName = "Zulhijja";
-        if (isDay == 1) isdayth = "st ";
-        else if (isDay == 2) isdayth = "nd ";
-        else if (isDay == 3) isdayth = "rd ";
-        else isdayth = "th ";
-        return String.valueOf(isDay + isdayth + isMOnthName + ", " + isYear);
+        String[] months = {"Muharram","Safar","Rabi-ul-Awwal","Rabi-ul-Aakhir","Jamadi-ul-Awwal","Jamadi-ul-Aakhir","Rajab","Shaban","Ramadan","Shawwal","Zulqaida","Zulhijja"};
+        if (isMontth >= 1 && isMontth <= 12) isMOnthName = months[isMontth - 1];
+        if (isDay == 1) isdayth = "st "; else if (isDay == 2) isdayth = "nd "; else if (isDay == 3) isdayth = "rd "; else isdayth = "th ";
+        return isDay + isdayth + isMOnthName + ", " + isYear;
     }
 
-    private void prayerTimeParsing(final String mDate, final String locat) {
-        StringRequest request = new StringRequest(Request.Method.GET, Apis.prayerTime + mDate + "&latitude=" + latitude + "&longitude=" + longitude, response -> {
+    private void prayerTimeParsing(final String mDate) {
+        String url = Apis.prayerTime + mDate + "&latitude=" + latitude + "&longitude=" + longitude;
+        StringRequest request = new StringRequest(Request.Method.GET, url, response -> {
             try {
-                String j_date = null, hijri_date = null, fajr = null, dhuhr = null, asr = null, maghrib = null, isha = null;
+                prayerTimeList.clear();
+                String hijri_date = null, fajr = null, dhuhr = null, asr = null, maghrib = null, isha = null, cityName = city;
                 JSONObject object = new JSONObject(response);
-                String cityName = object.has("city") ? object.getString("city") : city;
-                if (object.has("timings")) {
-                    JSONObject timings = object.getJSONObject("timings");
+                if (object.has("data")) {
+                    JSONObject data = object.getJSONObject("data");
+                    JSONObject timings = data.getJSONObject("timings");
                     fajr = timings.getString("Fajr");
                     dhuhr = timings.getString("Dhuhr");
                     asr = timings.getString("Asr");
                     maghrib = timings.getString("Maghrib");
                     isha = timings.getString("Isha");
-                    j_date = object.has("date") ? object.getJSONObject("date").getJSONObject("gregorian").getString("date") : mDate;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        hijri_date = convert_date(j_date);
-                    }
+                    String j_date = data.getJSONObject("date").getJSONObject("gregorian").getString("date");
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) hijri_date = convert_date(j_date);
                 } else if (object.has("items")) {
                     JSONArray jsonArray = object.getJSONArray("items");
                     for (int j = 0; j < jsonArray.length(); j++) {
-                        JSONObject arrayObject = jsonArray.getJSONObject(j);
-                        j_date = arrayObject.getString("date_for");
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            hijri_date = convert_date(j_date);
-                        }
-                        fajr = arrayObject.getString("fajr");
-                        dhuhr = arrayObject.getString("dhuhr");
-                        asr = arrayObject.getString("asr");
-                        maghrib = arrayObject.getString("maghrib");
-                        isha = arrayObject.getString("isha");
+                        JSONObject arr = jsonArray.getJSONObject(j);
+                        String j_date = arr.getString("date_for");
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) hijri_date = convert_date(j_date);
+                        fajr = arr.getString("fajr"); dhuhr = arr.getString("dhuhr");
+                        asr = arr.getString("asr"); maghrib = arr.getString("maghrib"); isha = arr.getString("isha");
                     }
                 }
-                prayerTimeList.add(fajr);
-                prayerTimeList.add(dhuhr);
-                prayerTimeList.add(asr);
-                prayerTimeList.add(maghrib);
-                prayerTimeList.add(isha);
-                prayerTimeList.add(hijri_date);
-                prayerTimeList.add(cityName);
+                prayerTimeList.add(fajr); prayerTimeList.add(dhuhr); prayerTimeList.add(asr);
+                prayerTimeList.add(maghrib); prayerTimeList.add(isha); prayerTimeList.add(hijri_date); prayerTimeList.add(cityName);
                 editor.putString("Set", gson.toJson(prayerTimeList));
                 editor.apply();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            } catch (JSONException e) { e.printStackTrace(); }
             ramajanJson(latitude, longitude);
-        }, error -> ramajanJson(latitude, longitude));
+        }, error -> goToHome());
         mRequestQueue.add(request);
     }
 
@@ -219,22 +186,14 @@ public class SplashScreenActivity extends AppCompatActivity {
                     if (object.has("timings")) {
                         JSONObject object1 = object.getJSONObject("timings");
                         toDaySehri = object1.getString("Imsak");
-                        if (toDaySehri.length() > 0) {
-                            toDaySehri = toDaySehri.substring(0, toDaySehri.length() - 5);
-                            toDaySehri = _12HourSDF.format(_24HourSDF.parse(toDaySehri));
-                        }
+                        if (toDaySehri.length() > 0) { toDaySehri = toDaySehri.substring(0, toDaySehri.length() - 5); toDaySehri = _12HourSDF.format(_24HourSDF.parse(toDaySehri)); }
                         toDayIftar = object1.getString("Maghrib");
-                        if (toDayIftar.length() > 0) {
-                            toDayIftar = toDayIftar.substring(0, toDayIftar.length() - 5);
-                            toDayIftar = _12HourSDF.format(_24HourSDF.parse(toDayIftar));
-                        }
+                        if (toDayIftar.length() > 0) { toDayIftar = toDayIftar.substring(0, toDayIftar.length() - 5); toDayIftar = _12HourSDF.format(_24HourSDF.parse(toDayIftar)); }
                     }
                     if (object.has("date")) {
                         JSONObject objectDate = object.getJSONObject("date");
-                        String returnDate = ramadanDate(objectDate.getString("readable"));
-                        String[] dddd = returnDate.split("/");
-                        currDate = dddd[0];
-                        engDay = dddd[1];
+                        String[] dddd = ramadanDate(objectDate.getString("readable")).split("/");
+                        currDate = dddd[0]; engDay = dddd[1];
                         if (objectDate.has("hijri")) {
                             JSONObject hijriObject = objectDate.getJSONObject("hijri");
                             hijriDate = hijriObject.getString("date");
@@ -257,18 +216,10 @@ public class SplashScreenActivity extends AppCompatActivity {
         ivWifi = controlDialogView.findViewById(R.id.ivWifi);
         ivMobileData = controlDialogView.findViewById(R.id.ivMobileData);
         ivCancel = controlDialogView.findViewById(R.id.ivCancel);
-        ivWifi.setOnClickListener(v -> {
-            appControlDialog.dismiss();
-            startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
-        });
+        ivWifi.setOnClickListener(v -> { appControlDialog.dismiss(); startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)); });
         ivMobileData.setOnClickListener(v -> {
-            if (NoInternet.isConnected(SplashScreenActivity.this)) {
-                appControlDialog.dismiss();
-                isEmptycheck();
-            } else {
-                startActivity(new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS));
-                appControlDialog.dismiss();
-            }
+            if (NoInternet.isConnected(SplashScreenActivity.this)) { appControlDialog.dismiss(); isEmptycheck(); }
+            else { startActivity(new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS)); appControlDialog.dismiss(); }
         });
         ivCancel.setOnClickListener(v -> appControlDialog.dismiss());
         appControlDialog.show();
