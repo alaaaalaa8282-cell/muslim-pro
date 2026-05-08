@@ -52,21 +52,20 @@
 
         <activity
             android:name=".LocationPermissionActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:exported="false">
 
         <activity
             android:name=".FullSuraActivity"
             android:exported="false"/>
 
         <activity
-            android:name=".SplashScreenActivity"
-            android:exported="false"/>
+    android:name=".SplashScreenActivity"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+    </intent-filter>
+</activity>
 
         <receiver
             android:name=".recever.AutoStart"
